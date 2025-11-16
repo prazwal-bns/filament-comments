@@ -12,6 +12,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -33,12 +34,12 @@ class AddComment extends Component implements HasActions, HasForms
         $this->record = $record;
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 RichEditor::make('body')
-                    ->disableGrammarly()
+                    // ->disableGrammarly()
                     ->hiddenLabel(true)
                     ->placeholder('Write a comment...')
                     ->label('Content')
@@ -51,7 +52,20 @@ class AddComment extends Component implements HasActions, HasForms
     {
         $this->validate();
 
-        $body = $this->parseMention($this->data['body']);
+        $bodyContent = $this->data['body'] ?? '';
+        
+        // Convert array to string if needed (RichEditor might return array)
+        if (is_array($bodyContent)) {
+            if (isset($bodyContent['html']) && is_string($bodyContent['html'])) {
+                $bodyContent = $bodyContent['html'];
+            } elseif (isset($bodyContent['type']) && $bodyContent['type'] === 'doc' && isset($bodyContent['content'])) {
+                $bodyContent = json_encode($bodyContent);
+            } else {
+                $bodyContent = '';
+            }
+        }
+        
+        $body = $this->parseMention((string) $bodyContent);
 
         $this->record->comments()->create([
             'body' => $body,
