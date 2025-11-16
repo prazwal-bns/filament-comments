@@ -11,8 +11,8 @@ use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
@@ -99,12 +99,11 @@ class Comment extends Component implements HasActions, HasForms
         return view('filament-comments::livewire.comment'); // @phpstan-ignore-line
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 RichEditor::make('body')
-                    ->disableGrammarly()
                     ->hiddenLabel(true)
                     ->autofocus()
                     ->placeholder('Write a comment...')
