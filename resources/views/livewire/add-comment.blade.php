@@ -1,7 +1,7 @@
-<div class="mt-6">
-    <form class="space-y-4">
+<div style="margin-top: 1.5rem;">
+    <form style="display: flex; flex-direction: column; gap: 1rem;">
         {{ $this->form }}
-        <x-filament::button class="mt-3" wire:click="create">
+        <x-filament::button style="align-self: flex-start;" wire:click="create">
             Add Comment
         </x-filament::button>
     </form>
