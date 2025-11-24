@@ -316,6 +316,51 @@ class Comment extends Component implements HasActions, HasForms
         }
     }
 
+    private function parseMention(string $body): string
+    {
+        $mention_column = config('filament-comments.mention_column');
+
+        $dom = new DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(mb_convert_encoding($body, 'HTML-ENTITIES', 'UTF-8'));
+        libxml_clear_errors();
+
+        $xpath = new DOMXPath($dom);
+        foreach ($xpath->query('//text()') as $textNode) {
+            if (preg_match_all('/@[\w.]+/', $textNode->nodeValue, $matches)) {
+                $parent = $textNode->parentNode;
+                $newFragment = $dom->createDocumentFragment();
+                $parts = preg_split('/(@[\w.]+)/', $textNode->nodeValue, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+                foreach ($parts as $part) {
+                    if (preg_match('/^@[\w.]+$/', $part)) {
+                        $partWithoutAt = str_replace('@', '', $part);
+                        $userModel = config('filament-comments.user_model');
+                        $user = $userModel::query()->where($mention_column, $partWithoutAt)->first();
+
+                        if ($user) {
+                            $u = $dom->createElement('u', $part);
+                            $u->setAttribute('class', 'text-primary-500');
+                            $newFragment->appendChild($u);
+                        } else {
+                            $newFragment->appendChild($dom->createTextNode($part));
+                        }
+                    } else {
+                        $newFragment->appendChild($dom->createTextNode($part));
+                    }
+                }
+
+                $parent->replaceChild($newFragment, $textNode);
+            }
+        }
+
+        $html = $dom->saveHTML();
+        $start = strpos($html, '<body>') + 6;
+        $end = strpos($html, '</body>');
+
+        return trim(substr($html, $start, $end - $start));
+    }
+
     private function appendMentionToBody(string $body, bool $isEditing = false): string
     {
         $mention_column = config('filament-comments.mention_column');
