@@ -9,10 +9,11 @@ use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
@@ -99,12 +100,11 @@ class Comment extends Component implements HasActions, HasForms
         return view('filament-comments::livewire.comment'); // @phpstan-ignore-line
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 RichEditor::make('body')
-                    ->disableGrammarly()
                     ->hiddenLabel(true)
                     ->autofocus()
                     ->placeholder('Write a comment...')
@@ -122,7 +122,10 @@ class Comment extends Component implements HasActions, HasForms
 
         $comment = $this->comment;
 
-        $body = $this->appendMentionToBody($this->data['body']);
+        $content = RichContentRenderer::make(content: $this->data['body'])->toHtml();
+
+        $body = $this->parseMention(body: $content);
+        // $body = $this->appendMentionToBody($this->data['body']);
 
         $comment->replies()->create([
             'user_id' => Auth::id(),
@@ -145,11 +148,13 @@ class Comment extends Component implements HasActions, HasForms
     {
         $this->form->validate(); // @phpstan-ignore-line
 
-        $body = $this->appendMentionToBody($this->data['body'], true);
+        $content = RichContentRenderer::make(content: $this->data['body'])->toHtml();
+
+        $body = $this->appendMentionToBody($content, true);
 
         $this->comment->update(['body' => $body]);
 
-        $newMentions = $this->extractMentions($this->data['body']);
+        $newMentions = $this->extractMentions($content);
 
         $addedMentions = array_diff($newMentions, $this->oldMentions);
 

@@ -8,6 +8,7 @@ use DOMXPath;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -52,20 +53,9 @@ class AddComment extends Component implements HasActions, HasForms
     {
         $this->validate();
 
-        $bodyContent = $this->data['body'] ?? '';
-        
-        // Convert array to string if needed (RichEditor might return array)
-        if (is_array($bodyContent)) {
-            if (isset($bodyContent['html']) && is_string($bodyContent['html'])) {
-                $bodyContent = $bodyContent['html'];
-            } elseif (isset($bodyContent['type']) && $bodyContent['type'] === 'doc' && isset($bodyContent['content'])) {
-                $bodyContent = json_encode($bodyContent);
-            } else {
-                $bodyContent = '';
-            }
-        }
-        
-        $body = $this->parseMention((string) $bodyContent);
+        $content = RichContentRenderer::make(content: $this->data['body'])->toHtml();
+
+        $body = $this->parseMention($content);
 
         $this->record->comments()->create([
             'body' => $body,
