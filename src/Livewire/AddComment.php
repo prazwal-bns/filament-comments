@@ -40,7 +40,6 @@ class AddComment extends Component implements HasActions, HasForms
         return $schema
             ->schema([
                 RichEditor::make('body')
-                    // ->disableGrammarly()
                     ->hiddenLabel(true)
                     ->placeholder('Write a comment...')
                     ->label('Content')
